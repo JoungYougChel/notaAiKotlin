@@ -190,10 +190,6 @@ class MainActivity : AppCompatActivity() {
 
             val scaledBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
 
-            // 원본 및 패딩된 이미지 크기 출력
-            Log.d("OriginalSize", "OriginalBitmap Width: ${bitmap.width}, Height: ${bitmap.height}")
-            Log.d("PaddedSize", "PaddedBitmap Width: $newWidth, Height: $newHeight")
-
             val paddedBitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(paddedBitmap)
             canvas.drawColor(Color.BLACK)
@@ -234,34 +230,31 @@ class MainActivity : AppCompatActivity() {
             val scaleX = originalBitmap.width.toFloat() / paddedBitmap.width
             val scaleY = originalBitmap.height.toFloat() / paddedBitmap.height
 
+            val centerX = originalBitmap.width / 2
+            val centerY = originalBitmap.height / 2
+
             for (i in output.indices) {
                 for (j in output[i].indices) {
                     for (k in output[i][j].indices) {
                         for (l in output[i][j][k].indices) {
                             val data = output[i][j][k][l]
-
-                            // 모델의 원래 출력 좌표 확인
-                            Log.d("ModelOutput", "Raw Output Data: ${data[0]}, ${data[1]}, ${data[2]}, ${data[3]}, Confidence: ${data[4]}")
-
-
                             if (data[4] > 0.5) {
-                                var left = (data[0] * paddedBitmap.width) * scaleX
-                                var top = (data[1] * paddedBitmap.height) * scaleY
-                                var right = (left + data[2] * paddedBitmap.width) * scaleX
-                                var bottom = (top + data[3] * paddedBitmap.height) * scaleY
+                                var left = (data[0] * paddedBitmap.width) * scaleX - centerX
+                                var top = (data[1] * paddedBitmap.height) * scaleY - centerY
+                                var right = (left + data[2] * paddedBitmap.width) * scaleX - centerX
+                                var bottom = (top + data[3] * paddedBitmap.height) * scaleY - centerY
 
-                                // 변환된 좌표 확인
-                                Log.d("TransformedCoordinates", "Transformed Left: $left, Top: $top, Right: $right, Bottom: $bottom")
+                                left = left.coerceIn(-centerX.toFloat(), centerX.toFloat())
+                                top = top.coerceIn(-centerY.toFloat(), centerY.toFloat())
+                                right = right.coerceIn(-centerX.toFloat(), centerX.toFloat())
+                                bottom = bottom.coerceIn(-centerY.toFloat(), centerY.toFloat())
 
+                                left += centerX
+                                top += centerY
+                                right += centerX
+                                bottom += centerY
 
-                                left = left.coerceIn(0f, originalBitmap.width.toFloat())
-                                top = top.coerceIn(0f, originalBitmap.height.toFloat())
-                                right = right.coerceIn(0f, originalBitmap.width.toFloat())
-                                bottom = bottom.coerceIn(0f, originalBitmap.height.toFloat())
-
-                                // 클리핑된 좌표 확인
-                                Log.d("ClippedCoordinates", "Clipped Left: $left, Top: $top, Right: $right, Bottom: $bottom")
-
+                                Log.d("BoundingBox", "Clipped Left: $left, Top: $top, Right: $right, Bottom: $bottom")
 
                                 canvas.drawRect(left, top, right, bottom, paint)
                             }
